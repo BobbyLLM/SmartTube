@@ -17,6 +17,7 @@ import com.liskovsoft.smartyoutubetv2.common.misc.BackupAndRestoreManager;
 import com.liskovsoft.smartyoutubetv2.common.misc.BackupAndRestoreHelper;
 import com.liskovsoft.smartyoutubetv2.common.misc.GDriveBackupManager;
 import com.liskovsoft.smartyoutubetv2.common.misc.GDriveBackupWorker;
+import com.liskovsoft.smartyoutubetv2.common.misc.GoogleTakeoutPlaylistImporter;
 import com.liskovsoft.smartyoutubetv2.common.misc.LocalDriveBackupWorker;
 import com.liskovsoft.smartyoutubetv2.common.prefs.GeneralData;
 import com.liskovsoft.smartyoutubetv2.common.utils.AppDialogUtil;
@@ -180,8 +181,20 @@ public class BackupSettingsPresenter extends BasePresenter<Void> {
 
     private void appendPlaylistImportOption(List<OptionItem> options) {
         BackupAndRestoreHelper helper = new BackupAndRestoreHelper(getContext());
-        options.add(UiOptionItem.from("Import local playlists", option ->
-                helper.importPlaylistOnly(() -> MessageHelpers.showMessage(getContext(), R.string.msg_done))));
+        options.add(UiOptionItem.from("Import Google Takeout playlists", option ->
+                helper.importGoogleTakeoutPlaylists(new BackupAndRestoreHelper.TakeoutImportCallback() {
+                    @Override
+                    public void onSuccess(GoogleTakeoutPlaylistImporter.Result result) {
+                        MessageHelpers.showLongMessage(getContext(), String.format(
+                                "Imported %d playlists and %d videos (%d metadata resolved)",
+                                result.getPlaylistCount(), result.getPlacementCount(), result.getResolvedMetadataCount()));
+                    }
+
+                    @Override
+                    public void onError(Exception error) {
+                        MessageHelpers.showLongMessage(getContext(), "Takeout playlist import failed: " + error.getMessage());
+                    }
+                })));
     }
 
     private void appendLocalBackupRestoreOptions(List<OptionItem> options) {

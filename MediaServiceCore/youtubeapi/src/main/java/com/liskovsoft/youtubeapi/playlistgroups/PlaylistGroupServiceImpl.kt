@@ -6,6 +6,7 @@ import com.liskovsoft.mediaserviceinterfaces.data.MediaItem
 import com.liskovsoft.sharedutils.helpers.Helpers
 import com.liskovsoft.sharedutils.rx.RxHelper
 import com.liskovsoft.youtubeapi.channelgroups.models.ItemGroupImpl
+import com.liskovsoft.youtubeapi.channelgroups.models.ItemImpl
 import com.liskovsoft.youtubeapi.service.internal.MediaServicePrefs
 import io.reactivex.disposables.Disposable
 
@@ -73,6 +74,32 @@ object PlaylistGroupServiceImpl : MediaServicePrefs.ProfileChangeListener {
     @JvmStatic
     fun getPlaylistGroups(): List<ItemGroup> {
         return mPlaylists
+    }
+
+    /** Merge a complete, already validated Takeout import into the active profile once. */
+    @JvmStatic
+    fun mergeTakeoutPlaylists(imported: List<TakeoutPlaylist>) {
+        val merged = mPlaylists.toMutableList()
+
+        imported.forEach { playlist ->
+            val items: MutableList<Item> = playlist.items.map {
+                ItemImpl(it.channelId, it.title, it.iconUrl, it.videoId, it.subtitle, it.badge)
+            }.toMutableList()
+            val group = ItemGroupImpl(playlist.id, playlist.title, null, items)
+            val existingIndex = merged.indexOfFirst { it.id == playlist.id }
+            if (existingIndex >= 0) {
+                merged[existingIndex] = group
+            } else {
+                merged.add(group)
+            }
+        }
+
+        mPlaylists = merged
+        mPlaylists.forEach {
+            it as ItemGroupImpl
+            it.onChange = { persistData() }
+        }
+        MediaServicePrefs.setProfileData(PLAYLIST_GROUP_DATA, Helpers.mergeData(mPlaylists))
     }
 
     /** Replace the active local profile's playlists with one validated import payload. */

@@ -7,6 +7,8 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build.VERSION;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.OpenableColumns;
 
 import com.liskovsoft.sharedutils.helpers.DateHelper;
@@ -17,9 +19,13 @@ import com.liskovsoft.smartyoutubetv2.common.app.presenters.settings.BackupSetti
 import com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.OnError;
 import com.liskovsoft.smartyoutubetv2.common.misc.MotherActivity.OnResult;
 import com.liskovsoft.smartyoutubetv2.common.prefs.GeneralData;
-
+import com.liskovsoft.smartyoutubetv2.common.app.presenters.BrowsePresenter;
+import com.liskovsoft.mediaserviceinterfaces.data.MediaItemMetadata;
+import com.liskovsoft.youtubeapi.playlistgroups.PlaylistGroupServiceImpl;
+import com.liskovsoft.youtubeapi.service.YouTubeServiceManager;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -27,9 +33,11 @@ public class BackupAndRestoreHelper implements OnResult {
     public static final String BACKUP_FOLDER_NAME = "SmartTubeBackup";
     private static final int REQ_PICK_FILES = 1001;
     private static final int REQ_PICK_PLAYLISTS = 1002;
+    private static final int REQ_PICK_TAKEOUT_PLAYLISTS = 1003;
     private final Context mContext;
     private Runnable mOnSuccess;
     private Runnable mOnPlaylistImportSuccess;
+    private TakeoutImportCallback mOnTakeoutImport;
     private final String[] mPreferredFileManagers = {
             "com.ghisler.android.TotalCommander",
             "com.lonelycatgames.Xplore",
@@ -39,6 +47,11 @@ public class BackupAndRestoreHelper implements OnResult {
 
     public BackupAndRestoreHelper(Context context) {
         mContext = context;
+    }
+
+    public interface TakeoutImportCallback {
+        void onSuccess(GoogleTakeoutPlaylistImporter.Result result);
+        void onError(Exception error);
     }
 
     public void exportAppMediaFolder() {
@@ -147,6 +160,17 @@ public class BackupAndRestoreHelper implements OnResult {
         ((Activity) mContext).startActivityForResult(intent, REQ_PICK_PLAYLISTS);
     }
 
+    public void importGoogleTakeoutPlaylists(TakeoutImportCallback callback) {
+        if (VERSION.SDK_INT < 19 || callback == null) return;
+
+        mOnTakeoutImport = callback;
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.setType("*/*");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        ((MotherActivity) mContext).addOnResult(this);
+        ((Activity) mContext).startActivityForResult(intent, REQ_PICK_TAKEOUT_PLAYLISTS);
+    }
+
     @Override
     public void onResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQ_PICK_FILES && resultCode == Activity.RESULT_OK) {
@@ -161,7 +185,41 @@ public class BackupAndRestoreHelper implements OnResult {
         } else if (requestCode == REQ_PICK_PLAYLISTS && resultCode == Activity.RESULT_OK) {
             if (data == null || data.getData() == null) return;
             importPlaylistZip(data.getData());
+        } else if (requestCode == REQ_PICK_TAKEOUT_PLAYLISTS && resultCode == Activity.RESULT_OK) {
+            if (data == null || data.getData() == null || mOnTakeoutImport == null) return;
+            importTakeout(data.getData(), mOnTakeoutImport);
         }
+    }
+
+    private void importTakeout(Uri uri, TakeoutImportCallback callback) {
+        new Thread(() -> {
+            try (InputStream input = mContext.getContentResolver().openInputStream(uri)) {
+                if (input == null) throw new IOException("Unable to open selected Takeout ZIP");
+                GoogleTakeoutPlaylistImporter.Result result = GoogleTakeoutPlaylistImporter.importStream(
+                        input,
+                        videoId -> resolveTakeoutMetadata(videoId)
+                );
+                PlaylistGroupServiceImpl.mergeTakeoutPlaylists(result.getPlaylists());
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    BrowsePresenter.instance(mContext).updateSections();
+                    callback.onSuccess(result);
+                });
+            } catch (Exception error) {
+                new Handler(Looper.getMainLooper()).post(() -> callback.onError(error));
+            }
+        }, "takeout-playlist-import").start();
+    }
+
+    private GoogleTakeoutPlaylistImporter.Metadata resolveTakeoutMetadata(String videoId) {
+        MediaItemMetadata metadata = YouTubeServiceManager.instance().getMediaItemService().getMetadata(videoId);
+        if (metadata == null) return null;
+        return new GoogleTakeoutPlaylistImporter.Metadata(
+                metadata.getTitle(),
+                "https://i.ytimg.com/vi/" + videoId + "/hqdefault.jpg",
+                metadata.getChannelId(),
+                metadata.getSecondTitle(),
+                metadata.getBadgeText()
+        );
     }
 
     private void importPlaylistZip(Uri uri) {
