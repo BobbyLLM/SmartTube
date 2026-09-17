@@ -28,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PushbackInputStream;
 
 public class BackupAndRestoreHelper implements OnResult {
     public static final String BACKUP_FOLDER_NAME = "SmartTubeBackup";
@@ -164,8 +165,8 @@ public class BackupAndRestoreHelper implements OnResult {
         if (VERSION.SDK_INT < 19 || callback == null) return;
 
         mOnTakeoutImport = callback;
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.setType("*/*");
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("application/zip");
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         ((MotherActivity) mContext).addOnResult(this);
         ((Activity) mContext).startActivityForResult(intent, REQ_PICK_TAKEOUT_PLAYLISTS);
@@ -193,8 +194,9 @@ public class BackupAndRestoreHelper implements OnResult {
 
     private void importTakeout(Uri uri, TakeoutImportCallback callback) {
         new Thread(() -> {
-            try (InputStream input = mContext.getContentResolver().openInputStream(uri)) {
-                if (input == null) throw new IOException("Unable to open selected Takeout ZIP");
+            try (InputStream rawInput = mContext.getContentResolver().openInputStream(uri)) {
+                if (rawInput == null) throw new IOException("Unable to open selected Takeout ZIP");
+                PushbackInputStream input = GoogleTakeoutZipTransport.open(rawInput);
                 GoogleTakeoutPlaylistImporter.Result result = GoogleTakeoutPlaylistImporter.importStream(
                         input,
                         videoId -> resolveTakeoutMetadata(videoId)
