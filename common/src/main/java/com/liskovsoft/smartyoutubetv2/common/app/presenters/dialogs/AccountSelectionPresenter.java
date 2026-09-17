@@ -8,6 +8,8 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.ui.OptionItem;
 import com.liskovsoft.smartyoutubetv2.common.app.models.playback.ui.UiOptionItem;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.AppDialogPresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.base.BasePresenter;
+import com.liskovsoft.smartyoutubetv2.common.utils.AppDialogUtil;
+import com.liskovsoft.smartyoutubetv2.common.utils.SimpleEditDialog;
 import com.liskovsoft.youtubeapi.service.internal.LocalProfileManager;
 
 import java.util.ArrayList;
@@ -38,8 +40,25 @@ public class AccountSelectionPresenter extends BasePresenter<Void> {
             }, profile.getId().equals(profiles.getActiveId())));
         }
         options.add(UiOptionItem.from("Create local profile", item -> {
-            profiles.create("Profile " + (profiles.list().size() + 1));
             dialog.closeDialog();
+            SimpleEditDialog.show(getContext(), "Create local profile", "Profile name", null, value -> {
+                profiles.create(value);
+                return true;
+            });
+        }, false));
+        options.add(UiOptionItem.from("Rename active profile", item -> {
+            dialog.closeDialog();
+            LocalProfileManager.Profile active = profiles.getActive();
+            SimpleEditDialog.show(getContext(), "Rename local profile", "Profile name", active.getName(), value -> {
+                profiles.rename(active.getId(), value);
+                return true;
+            });
+        }, false));
+        options.add(UiOptionItem.from("Delete active profile", item -> {
+            dialog.closeDialog();
+            LocalProfileManager.Profile active = profiles.getActive();
+            AppDialogUtil.showConfirmationDialog(getContext(), "Delete " + active.getName() + "?",
+                    () -> profiles.delete(active.getId()));
         }, false));
         dialog.appendRadioCategory("Local profiles", options);
         dialog.showDialog(getContext().getString(R.string.app_name), this::unhold);

@@ -2,7 +2,6 @@ package com.liskovsoft.smartyoutubetv2.common.app.models.errors;
 
 import android.content.Context;
 import com.liskovsoft.smartyoutubetv2.common.R;
-import com.liskovsoft.smartyoutubetv2.common.app.presenters.YTSignInPresenter;
 
 public class SignInError implements ErrorFragmentData {
     private final Context mContext;
@@ -13,7 +12,7 @@ public class SignInError implements ErrorFragmentData {
 
     @Override
     public void onAction() {
-        YTSignInPresenter.instance(mContext).start();
+        // Google authentication is not part of SmartTube Local.
     }
 
     @Override
@@ -23,6 +22,6 @@ public class SignInError implements ErrorFragmentData {
 
     @Override
     public String getActionText() {
-        return mContext.getString(R.string.action_signin);
+        return mContext.getString(R.string.dialog_account_none);
     }
 }

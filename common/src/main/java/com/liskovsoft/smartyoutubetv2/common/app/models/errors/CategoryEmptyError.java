@@ -6,7 +6,6 @@ import androidx.annotation.Nullable;
 
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.smartyoutubetv2.common.R;
-import com.liskovsoft.smartyoutubetv2.common.app.presenters.YTSignInPresenter;
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 
 public class CategoryEmptyError implements ErrorFragmentData {
@@ -20,7 +19,7 @@ public class CategoryEmptyError implements ErrorFragmentData {
 
     @Override
     public void onAction() {
-        YTSignInPresenter.instance(mContext).start();
+        // Anonymous YouTube access is the only supported network path.
     }
 
     @Override
@@ -36,6 +35,6 @@ public class CategoryEmptyError implements ErrorFragmentData {
 
     @Override
     public String getActionText() {
-        return mError != null && Helpers.startsWith(mError.getMessage(), "AuthError") ? mContext.getString(R.string.action_signin) : null;
+        return null;
     }
 }

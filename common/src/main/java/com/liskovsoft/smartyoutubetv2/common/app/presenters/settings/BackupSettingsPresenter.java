@@ -164,8 +164,7 @@ public class BackupSettingsPresenter extends BasePresenter<Void> {
                 mGeneralData.isDeviceSpecificBackupEnabled()
         ));
 
-        settingsPresenter.appendSingleButton(UiOptionItem.from(
-                getContext().getString(R.string.dialog_add_account), option2 -> GoogleSignInPresenter.instance(getContext()).start()));
+        // Cloud backup is intentionally unavailable in the local-only build.
     }
 
     private void appendLocalBackupCategory(AppDialogPresenter settingsPresenter) {

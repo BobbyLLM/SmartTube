@@ -231,11 +231,7 @@ public class YouTubeAccountManager {
 
     public void addOnAccountChange(OnAccountChange listener) {
         if (!mListeners.contains(listener)) {
-            if (listener instanceof MediaServicePrefs) {
-                mListeners.add(0, listener);
-            } else {
-                mListeners.add(listener);
-            }
+            mListeners.add(listener);
         }
     }
 
@@ -291,13 +287,8 @@ public class YouTubeAccountManager {
     private void notifyListeners() {
         Account account = getSelectedAccount();
 
-        // Fix sign in bug
         mListeners.forEach(listener -> {
-            if (listener instanceof MediaServicePrefs) {
-                listener.onAccountChanged(account);
-            } else {
-                RxHelper.runUser(() -> listener.onAccountChanged(account));
-            }
+            RxHelper.runUser(() -> listener.onAccountChanged(account));
         });
     }
 
