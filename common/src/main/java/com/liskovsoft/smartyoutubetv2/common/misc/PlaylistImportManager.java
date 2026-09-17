@@ -6,7 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -30,7 +30,7 @@ public final class PlaylistImportManager {
                     int count;
                     while ((count = input.read(buffer)) != -1) payload.write(buffer, 0, count);
                     return PlaylistGroupServiceImpl.importData(
-                            new String(payload.toByteArray(), StandardCharsets.UTF_8));
+                            new String(payload.toByteArray(), Charset.forName("UTF-8")));
                 }
             }
         }
