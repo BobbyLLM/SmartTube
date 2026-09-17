@@ -140,11 +140,26 @@ public class BackupAndRestoreHelper implements OnResult {
         if (VERSION.SDK_INT < 19 || onSuccess == null) return;
 
         mOnPlaylistImportSuccess = onSuccess;
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.setType("application/zip");
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        Intent intent = createPlaylistPickerIntent();
         ((MotherActivity) mContext).addOnResult(this);
         ((Activity) mContext).startActivityForResult(intent, REQ_PICK_PLAYLISTS);
+    }
+
+    static Intent createPlaylistPickerIntent() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.setType("*/*");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        return intent;
+    }
+
+    static Uri extractPlaylistUri(Intent data) {
+        if (data == null) return null;
+
+        Uri uri = data.getData();
+        if (uri == null && data.getClipData() != null && data.getClipData().getItemCount() > 0) {
+            uri = data.getClipData().getItemAt(0).getUri();
+        }
+        return uri;
     }
 
     @Override
@@ -159,8 +174,12 @@ public class BackupAndRestoreHelper implements OnResult {
 
             unpackTempZip(uri, () -> mOnSuccess.run(), null);
         } else if (requestCode == REQ_PICK_PLAYLISTS && resultCode == Activity.RESULT_OK) {
-            if (data == null || data.getData() == null) return;
-            importPlaylistZip(data.getData());
+            Uri uri = extractPlaylistUri(data);
+            if (uri == null) {
+                MessageHelpers.showLongMessage(mContext, "No playlist document was selected");
+                return;
+            }
+            importPlaylistZip(uri);
         }
     }
 
