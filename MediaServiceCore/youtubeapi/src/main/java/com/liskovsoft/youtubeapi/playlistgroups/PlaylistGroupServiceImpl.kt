@@ -9,7 +9,7 @@ import com.liskovsoft.youtubeapi.channelgroups.models.ItemGroupImpl
 import com.liskovsoft.youtubeapi.service.internal.MediaServicePrefs
 import io.reactivex.disposables.Disposable
 
-internal object PlaylistGroupServiceImpl : MediaServicePrefs.ProfileChangeListener {
+object PlaylistGroupServiceImpl : MediaServicePrefs.ProfileChangeListener {
     private const val PLAYLIST_GROUP_DATA = "playlist_group_data"
     private const val PERSIST_DELAY_MS: Long = 5_000
     private lateinit var mPlaylists: MutableList<ItemGroup>
@@ -73,6 +73,23 @@ internal object PlaylistGroupServiceImpl : MediaServicePrefs.ProfileChangeListen
     @JvmStatic
     fun getPlaylistGroups(): List<ItemGroup> {
         return mPlaylists
+    }
+
+    /** Replace the active local profile's playlists with one validated import payload. */
+    @JvmStatic
+    fun importData(data: String?): Boolean {
+        if (data.isNullOrEmpty()) return false
+
+        val imported = Helpers.parseList(Helpers.splitData(data), 0, ItemGroupImpl::fromString)
+        if (imported.isNullOrEmpty()) return false
+
+        MediaServicePrefs.setProfileData(PLAYLIST_GROUP_DATA, data)
+        mPlaylists = imported
+        mPlaylists.forEach {
+            it as ItemGroupImpl
+            it.onChange = { persistData() }
+        }
+        return true
     }
 
     @JvmStatic

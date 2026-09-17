@@ -26,8 +26,10 @@ import java.io.OutputStream;
 public class BackupAndRestoreHelper implements OnResult {
     public static final String BACKUP_FOLDER_NAME = "SmartTubeBackup";
     private static final int REQ_PICK_FILES = 1001;
+    private static final int REQ_PICK_PLAYLISTS = 1002;
     private final Context mContext;
     private Runnable mOnSuccess;
+    private Runnable mOnPlaylistImportSuccess;
     private final String[] mPreferredFileManagers = {
             "com.ghisler.android.TotalCommander",
             "com.lonelycatgames.Xplore",
@@ -134,6 +136,17 @@ public class BackupAndRestoreHelper implements OnResult {
         ((Activity) mContext).startActivityForResult(intent, REQ_PICK_FILES);
     }
 
+    public void importPlaylistOnly(Runnable onSuccess) {
+        if (VERSION.SDK_INT < 19 || onSuccess == null) return;
+
+        mOnPlaylistImportSuccess = onSuccess;
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.setType("application/zip");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        ((MotherActivity) mContext).addOnResult(this);
+        ((Activity) mContext).startActivityForResult(intent, REQ_PICK_PLAYLISTS);
+    }
+
     @Override
     public void onResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQ_PICK_FILES && resultCode == Activity.RESULT_OK) {
@@ -145,6 +158,27 @@ public class BackupAndRestoreHelper implements OnResult {
             }
 
             unpackTempZip(uri, () -> mOnSuccess.run(), null);
+        } else if (requestCode == REQ_PICK_PLAYLISTS && resultCode == Activity.RESULT_OK) {
+            if (data == null || data.getData() == null) return;
+            importPlaylistZip(data.getData());
+        }
+    }
+
+    private void importPlaylistZip(Uri uri) {
+        File tempZip = new File(FileHelpers.getExternalMediaDirectory(mContext),
+                "smarttube-playlist-import.zip");
+        copyUriToFile(uri, tempZip);
+        try {
+            if (PlaylistImportManager.importZip(tempZip)) {
+                if (mOnPlaylistImportSuccess != null) mOnPlaylistImportSuccess.run();
+            } else {
+                MessageHelpers.showLongMessage(mContext, "Playlist import payload not found or invalid");
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            MessageHelpers.showLongMessage(mContext, "Playlist import failed: " + ex.getMessage());
+        } finally {
+            tempZip.delete();
         }
     }
 

@@ -14,6 +14,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.presenters.GoogleSignInPresente
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.base.BasePresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.service.SidebarService;
 import com.liskovsoft.smartyoutubetv2.common.misc.BackupAndRestoreManager;
+import com.liskovsoft.smartyoutubetv2.common.misc.BackupAndRestoreHelper;
 import com.liskovsoft.smartyoutubetv2.common.misc.GDriveBackupManager;
 import com.liskovsoft.smartyoutubetv2.common.misc.GDriveBackupWorker;
 import com.liskovsoft.smartyoutubetv2.common.misc.LocalDriveBackupWorker;
@@ -171,9 +172,16 @@ public class BackupSettingsPresenter extends BasePresenter<Void> {
         List<OptionItem> options = new ArrayList<>();
 
         appendLocalBackupRestoreOptions(options);
+        appendPlaylistImportOption(options);
         appendLocalAutoBackupOption(options);
 
         settingsPresenter.appendStringsCategory(getContext().getString(R.string.local_backup), options);
+    }
+
+    private void appendPlaylistImportOption(List<OptionItem> options) {
+        BackupAndRestoreHelper helper = new BackupAndRestoreHelper(getContext());
+        options.add(UiOptionItem.from("Import local playlists", option ->
+                helper.importPlaylistOnly(() -> MessageHelpers.showMessage(getContext(), R.string.msg_done))));
     }
 
     private void appendLocalBackupRestoreOptions(List<OptionItem> options) {
