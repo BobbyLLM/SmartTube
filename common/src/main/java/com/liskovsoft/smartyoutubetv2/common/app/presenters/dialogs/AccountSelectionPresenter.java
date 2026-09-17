@@ -7,7 +7,9 @@ import com.liskovsoft.smartyoutubetv2.common.R;
 import com.liskovsoft.smartyoutubetv2.common.app.models.playback.ui.OptionItem;
 import com.liskovsoft.smartyoutubetv2.common.app.models.playback.ui.UiOptionItem;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.AppDialogPresenter;
+import com.liskovsoft.smartyoutubetv2.common.app.presenters.BrowsePresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.base.BasePresenter;
+import com.liskovsoft.smartyoutubetv2.common.app.presenters.settings.AccountSettingsPresenter;
 import com.liskovsoft.smartyoutubetv2.common.utils.AppDialogUtil;
 import com.liskovsoft.smartyoutubetv2.common.utils.SimpleEditDialog;
 import com.liskovsoft.youtubeapi.service.internal.LocalProfileManager;
@@ -36,6 +38,7 @@ public class AccountSelectionPresenter extends BasePresenter<Void> {
         for (LocalProfileManager.Profile profile : profiles.list()) {
             options.add(UiOptionItem.from(profile.getName(), item -> {
                 profiles.select(profile.getId());
+                BrowsePresenter.instance(getContext()).updateSections();
                 dialog.closeDialog();
             }, profile.getId().equals(profiles.getActiveId())));
         }
@@ -43,8 +46,13 @@ public class AccountSelectionPresenter extends BasePresenter<Void> {
             dialog.closeDialog();
             SimpleEditDialog.show(getContext(), "Create local profile", "Profile name", null, value -> {
                 profiles.create(value);
+                BrowsePresenter.instance(getContext()).updateSections();
                 return true;
             });
+        }, false));
+        options.add(UiOptionItem.from(getContext().getString(R.string.protect_account_with_password), item -> {
+            dialog.closeDialog();
+            AccountSettingsPresenter.instance(getContext()).show();
         }, false));
         options.add(UiOptionItem.from("Rename active profile", item -> {
             dialog.closeDialog();

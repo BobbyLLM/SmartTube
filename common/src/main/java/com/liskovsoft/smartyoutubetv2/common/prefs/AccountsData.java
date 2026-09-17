@@ -3,15 +3,13 @@ package com.liskovsoft.smartyoutubetv2.common.prefs;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.NonNull;
-import com.liskovsoft.mediaserviceinterfaces.oauth.Account;
 import com.liskovsoft.sharedutils.helpers.Helpers;
-import com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager;
-import com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.AccountChangeListener;
+import com.liskovsoft.youtubeapi.service.internal.LocalProfileManager;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class AccountsData implements AccountChangeListener {
+public class AccountsData implements LocalProfileManager.Listener {
     private static final String ACCOUNTS_DATA = "accounts_data";
     @SuppressLint("StaticFieldLeak")
     private static AccountsData sInstance;
@@ -50,7 +48,7 @@ public class AccountsData implements AccountChangeListener {
     private AccountsData(Context context) {
         mContext = context;
         mAppPrefs = AppPrefs.instance(mContext);
-        MediaServiceManager.instance().addAccountListener(this);
+        LocalProfileManager.instance().addListener(this);
         restoreState();
     }
 
@@ -72,17 +70,19 @@ public class AccountsData implements AccountChangeListener {
     }
 
     public void setAccountPassword(String password) {
-        mPasswords.put(getAccountName(), new PasswordItem(getAccountName(), password));
+        String profileId = getProfileId();
+        mPasswords.put(profileId, new PasswordItem(profileId, password));
 
         persistState();
     }
 
     public String getAccountPassword() {
-        if (getAccountName() == null) {
+        String profileId = getProfileId();
+        if (profileId == null) {
             return null;
         }
 
-        PasswordItem passwordItem = mPasswords.get(getAccountName());
+        PasswordItem passwordItem = mPasswords.get(profileId);
 
         return passwordItem != null ? passwordItem.password : null;
     }
@@ -119,13 +119,12 @@ public class AccountsData implements AccountChangeListener {
         ));
     }
 
-    private String getAccountName() {
-        Account account = MediaServiceManager.instance().getSelectedAccount();
-        return account != null ? account.getName() : null;
+    private String getProfileId() {
+        return LocalProfileManager.instance().getActiveId();
     }
 
     @Override
-    public void onAccountChanged(Account account) {
+    public void onProfileChanged() {
         mIsPasswordAccepted = false;
     }
 }

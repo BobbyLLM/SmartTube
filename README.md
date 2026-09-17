@@ -10,10 +10,10 @@ Implemented:
 
 The current test build is SmartTube 32.52. Currently attempting to figure out Google Takeout-->CSV-->playlists import pathway. All else appears to work as per main-line and local playlists / local accounts are working. 
 
-TBC: 
+Current status:
 
-- Playlist import
-- Per account isolation with PIN
+- Local-profile password protection (TV validated)
+- Playlist import (WIP)
 - Local avatars (very minor issue).  
 
 Download the current universal APK from [GitHub Releases](https://github.com/BobbyLLM/SmartTube/releases/download/v32.52-local/SmartTube_Local_32.52_universal.apk).
