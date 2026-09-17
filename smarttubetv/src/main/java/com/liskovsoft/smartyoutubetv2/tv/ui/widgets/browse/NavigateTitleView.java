@@ -197,7 +197,7 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         mAccountView = findViewById(R.id.account_orb);
         mAccountView.setOnOrbClickedListener(v -> AccountSelectionPresenter.instance(getContext()).nextAccountOrDialog());
         mAccountView.setOnOrbLongClickedListener(v -> {
-            AccountSettingsPresenter.instance(getContext()).show();
+            AccountSelectionPresenter.instance(getContext()).show(true);
             return true;
         });
         TooltipCompatHandler.setTooltipText(mAccountView, getContext().getString(R.string.settings_accounts));
@@ -283,19 +283,11 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
             return;
         }
 
-        Account current = MediaServiceManager.instance().getSelectedAccount();
-
-        if (current != null && current.getAvatarImageUrl() != null) {
-            loadIcon(mAccountView, current.getAvatarImageUrl(), false);
-            String accountName = current.getName() != null ? current.getName() : current.getEmail();
-            //TooltipCompatHandler.setTooltipText(mAccountView, Utils.updateTooltip(getContext(), accountName));
-            TooltipCompatHandler.setTooltipText(mAccountView, accountName);
-        } else {
-            Colors orbColors = mAccountView.getOrbColors();
-            mAccountView.setOrbColors(new Colors(orbColors.color, orbColors.brightColor, ContextCompat.getColor(getContext(), R.color.orb_icon_color)));
-            mAccountView.setOrbIcon(ContextCompat.getDrawable(getContext(), R.drawable.browse_title_account));
-            TooltipCompatHandler.setTooltipText(mAccountView, getContext().getString(R.string.dialog_account_none));
-        }
+        Colors orbColors = mAccountView.getOrbColors();
+        mAccountView.setOrbColors(new Colors(orbColors.color, orbColors.brightColor, ContextCompat.getColor(getContext(), R.color.orb_icon_color)));
+        mAccountView.setOrbIcon(ContextCompat.getDrawable(getContext(), R.drawable.browse_title_account));
+        TooltipCompatHandler.setTooltipText(mAccountView,
+                com.liskovsoft.youtubeapi.service.internal.LocalProfileManager.instance().getActive().getName());
     }
 
     private void updateLanguageIcon() {

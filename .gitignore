@@ -68,6 +68,7 @@ tmp/
 .DS_Store
 /captures
 .externalNativeBuild
+.tooling/
 fabric.properties
 *BAK.java
 hs_err_pid*.log

@@ -2,7 +2,7 @@ name: Build Debug APK
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "local-profiles-v1" ]
   workflow_dispatch:
 
 jobs:
@@ -108,6 +108,13 @@ jobs:
         with:
           name: SmartTube_${{ steps.get_version.outputs.VERSION_NAME }}_universal
           path: ./smarttubetv/build/outputs/apk/stbeta/release/*_universal.apk
+          if-no-files-found: error
+
+      - name: Upload installable APK bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: SmartTube-Local-installable-apks
+          path: ./smarttubetv/build/outputs/apk/stbeta/release/*.apk
           if-no-files-found: error
 
       - name: Upload x86 APK

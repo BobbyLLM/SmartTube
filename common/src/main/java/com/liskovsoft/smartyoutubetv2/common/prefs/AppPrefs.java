@@ -4,14 +4,13 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.liskovsoft.mediaserviceinterfaces.oauth.Account;
 import com.liskovsoft.sharedutils.misc.WeakHashSet;
 import com.liskovsoft.sharedutils.prefs.SharedPreferencesBase;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.service.SidebarService;
 import com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager;
-import com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.AccountChangeListener;
+import com.liskovsoft.youtubeapi.service.internal.LocalProfileManager;
 
-public class AppPrefs extends SharedPreferencesBase implements AccountChangeListener {
+public class AppPrefs extends SharedPreferencesBase implements LocalProfileManager.Listener {
     private static final String TAG = AppPrefs.class.getSimpleName();
     private static final String PREFS_DIR = "app_prefs";
     @SuppressLint("StaticFieldLeak")
@@ -40,13 +39,12 @@ public class AppPrefs extends SharedPreferencesBase implements AccountChangeList
     }
 
     private void initProfiles() {
-        MediaServiceManager.instance().addAccountListener(this);
+        LocalProfileManager.instance().addListener(this);
     }
 
     @Override
-    public void onAccountChanged(Account account) {
-        selectProfile(account);
-        onProfileChanged();
+    public void onProfileChanged() {
+        notifyProfileListeners();
     }
 
     public static AppPrefs instance(Context context) {
@@ -67,7 +65,7 @@ public class AppPrefs extends SharedPreferencesBase implements AccountChangeList
         }
 
         putBoolean(MULTI_PROFILES, enabled);
-        onProfileChanged();
+        notifyProfileListeners();
         //selectAccount(enabled ? MediaServiceManager.instance().getSelectedAccount() : null);
     }
 
@@ -115,11 +113,11 @@ public class AppPrefs extends SharedPreferencesBase implements AccountChangeList
         // Fallback to non-profile settings
         //return data != null ? data : getData(key);
 
-        return getData(getProfileKey(key, isMultiProfilesEnabled()));
+        return getData(getProfileKey(key, true));
     }
 
     public void setProfileData(String key, String data) {
-        setData(getProfileKey(key, isMultiProfilesEnabled()), data);
+        setData(getProfileKey(key, true), data);
     }
 
     //public String getData(String key) {
@@ -157,13 +155,7 @@ public class AppPrefs extends SharedPreferencesBase implements AccountChangeList
         putString(LAST_PROFILE_NAME, profileName);
     }
 
-    private void selectProfile(Account account) {
-        String profileName = account != null && account.getName() != null ? account.getName().replace(" ", "_") : ANONYMOUS_PROFILE_NAME;
-
-        setProfileName(profileName);
-    }
-
-    private void onProfileChanged() {
+    private void notifyProfileListeners() {
         mListeners.forEach(ProfileChangeListener::onProfileChanged);
     }
 
@@ -193,7 +185,7 @@ public class AppPrefs extends SharedPreferencesBase implements AccountChangeList
     //}
 
     private String getProfileKey(String key, boolean isMultiProfilesEnabled) {
-        String profileName = getProfileName();
+        String profileName = LocalProfileManager.instance().getActiveId();
         if (!TextUtils.isEmpty(profileName) && isMultiProfilesEnabled) {
             key = profileName + "_" + key;
         }
