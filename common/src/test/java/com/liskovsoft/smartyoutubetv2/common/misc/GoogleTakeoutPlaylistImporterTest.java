@@ -12,6 +12,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class GoogleTakeoutPlaylistImporterTest {
     @Test
@@ -59,6 +60,35 @@ public class GoogleTakeoutPlaylistImporterTest {
         throw new AssertionError("Malformed CSV was accepted");
     }
 
+    @Test
+    public void ignoresExactlyFiveTrailingBlankRows() throws Exception {
+        GoogleTakeoutPlaylistImporter.Result result = GoogleTakeoutPlaylistImporter.parse(
+                new ByteArrayInputStream(createSinglePlaylistArchive("Video ID", "v1\r\n\r\n\r\n\r\n\r\n\r\n")));
+        assertEquals(1, result.getPlacementCount());
+        assertEquals("v1", result.getPlaylists().get(0).getItems().get(0).getVideoId());
+    }
+
+    @Test
+    public void ignoresBlankRowsBetweenValidRowsAndPreservesDuplicates() throws Exception {
+        GoogleTakeoutPlaylistImporter.Result result = GoogleTakeoutPlaylistImporter.parse(
+                new ByteArrayInputStream(createSinglePlaylistArchive("Video ID", "a\n\n   \n b \n a\n")));
+        assertEquals(3, result.getPlacementCount());
+        assertEquals("a", result.getPlaylists().get(0).getItems().get(0).getVideoId());
+        assertEquals("b", result.getPlaylists().get(0).getItems().get(1).getVideoId());
+        assertEquals("a", result.getPlaylists().get(0).getItems().get(2).getVideoId());
+    }
+
+    @Test
+    public void rejectsNonBlankRowWithEmptyVideoId() throws Exception {
+        try {
+            GoogleTakeoutPlaylistImporter.parse(new ByteArrayInputStream(
+                    createSinglePlaylistArchive("Video ID,Title", ",populated title\r\n")));
+            fail("Non-blank row with empty Video ID was accepted");
+        } catch (Exception expected) {
+            assertEquals("Empty Video ID in playlist: HomeLab", expected.getMessage());
+        }
+    }
+
     private static byte[] createArchive(boolean malformed) throws Exception {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(bytes)) {
@@ -71,6 +101,17 @@ public class GoogleTakeoutPlaylistImporterTest {
             put(zip, root + "Comma, \"Title\"-videos.csv",
                     "Video ID\r\n v1 \r\nmissing\r\nv1\r\n");
             put(zip, root + "Second-videos.csv", "Video ID\n v2\n");
+        }
+        return bytes.toByteArray();
+    }
+
+    private static byte[] createSinglePlaylistArchive(String childHeader, String childRows) throws Exception {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (ZipOutputStream zip = new ZipOutputStream(bytes)) {
+            String root = "Takeout/YouTube and YouTube Music/playlists/";
+            put(zip, root + "playlists.csv",
+                    "\uFEFFPlaylist ID,Playlist Title (Original)\r\nPL1,HomeLab\r\n");
+            put(zip, root + "HomeLab-videos.csv", childHeader + "\r\n" + childRows);
         }
         return bytes.toByteArray();
     }

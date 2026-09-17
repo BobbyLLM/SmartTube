@@ -304,7 +304,7 @@ public final class GoogleTakeoutPlaylistImporter {
                     int next = reader.read();
                     if (next != '\n' && next != -1) reader.unread(next);
                 }
-                if (sawData || !record.isEmpty()) records.add(record);
+                if (!isBlankRecord(record)) records.add(record);
                 record = new ArrayList<>();
                 sawData = false;
             } else {
@@ -315,7 +315,7 @@ public final class GoogleTakeoutPlaylistImporter {
         if (quoted) throw new IOException("Unclosed quoted CSV field");
         if (sawData || field.length() > 0 || !record.isEmpty()) {
             record.add(field.toString());
-            records.add(record);
+            if (!isBlankRecord(record)) records.add(record);
         }
         if (records.isEmpty()) throw new IOException("Empty CSV");
 
@@ -338,6 +338,14 @@ public final class GoogleTakeoutPlaylistImporter {
             rows.add(row);
         }
         return new CsvTable(headers, rows);
+    }
+
+    private static boolean isBlankRecord(List<String> fields) {
+        if (fields == null || fields.isEmpty()) return true;
+        for (String field : fields) {
+            if (field != null && !field.trim().isEmpty()) return false;
+        }
+        return true;
     }
 
     private static byte[] readBounded(InputStream input, int maxBytes) throws IOException {
