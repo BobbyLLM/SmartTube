@@ -10,6 +10,8 @@ import com.liskovsoft.smartyoutubetv2.common.app.presenters.AppDialogPresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.base.BasePresenter;
 import com.liskovsoft.smartyoutubetv2.common.utils.AppDialogUtil;
 import com.liskovsoft.smartyoutubetv2.common.utils.SimpleEditDialog;
+import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
+import com.liskovsoft.smartyoutubetv2.common.prefs.AccountsData;
 import com.liskovsoft.youtubeapi.service.internal.LocalProfileManager;
 
 import java.util.ArrayList;
@@ -35,8 +37,23 @@ public class AccountSelectionPresenter extends BasePresenter<Void> {
         List<OptionItem> options = new ArrayList<>();
         for (LocalProfileManager.Profile profile : profiles.list()) {
             options.add(UiOptionItem.from(profile.getName(), item -> {
-                profiles.select(profile.getId());
-                dialog.closeDialog();
+                String password = AccountsData.instance(getContext()).getAccountPassword(profile.getId());
+                if (password == null || profile.getId().equals(profiles.getActiveId())) {
+                    profiles.select(profile.getId());
+                    dialog.closeDialog();
+                    return;
+                }
+
+                SimpleEditDialog.showPassword(getContext(), "Enter profile password", null, value -> {
+                    if (!Utils.passwordMatch(password, value)) {
+                        return false;
+                    }
+
+                    profiles.select(profile.getId());
+                    AccountsData.instance(getContext()).setPasswordAccepted(true);
+                    dialog.closeDialog();
+                    return true;
+                });
             }, profile.getId().equals(profiles.getActiveId())));
         }
         options.add(UiOptionItem.from("Create local profile", item -> {

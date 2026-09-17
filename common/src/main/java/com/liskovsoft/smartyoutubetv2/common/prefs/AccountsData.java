@@ -7,11 +7,12 @@ import com.liskovsoft.mediaserviceinterfaces.oauth.Account;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager;
 import com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.AccountChangeListener;
+import com.liskovsoft.youtubeapi.service.internal.LocalProfileManager;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class AccountsData implements AccountChangeListener {
+public class AccountsData implements AccountChangeListener, LocalProfileManager.Listener {
     private static final String ACCOUNTS_DATA = "accounts_data";
     @SuppressLint("StaticFieldLeak")
     private static AccountsData sInstance;
@@ -51,6 +52,7 @@ public class AccountsData implements AccountChangeListener {
         mContext = context;
         mAppPrefs = AppPrefs.instance(mContext);
         MediaServiceManager.instance().addAccountListener(this);
+        LocalProfileManager.instance().addListener(this);
         restoreState();
     }
 
@@ -78,11 +80,15 @@ public class AccountsData implements AccountChangeListener {
     }
 
     public String getAccountPassword() {
-        if (getAccountName() == null) {
+        return getAccountPassword(getAccountName());
+    }
+
+    public String getAccountPassword(String accountName) {
+        if (accountName == null) {
             return null;
         }
 
-        PasswordItem passwordItem = mPasswords.get(getAccountName());
+        PasswordItem passwordItem = mPasswords.get(accountName);
 
         return passwordItem != null ? passwordItem.password : null;
     }
@@ -121,11 +127,16 @@ public class AccountsData implements AccountChangeListener {
 
     private String getAccountName() {
         Account account = MediaServiceManager.instance().getSelectedAccount();
-        return account != null ? account.getName() : null;
+        return account != null ? account.getName() : LocalProfileManager.instance().getActiveId();
     }
 
     @Override
     public void onAccountChanged(Account account) {
+        mIsPasswordAccepted = false;
+    }
+
+    @Override
+    public void onProfileChanged() {
         mIsPasswordAccepted = false;
     }
 }
