@@ -51,6 +51,8 @@ EDIT: Regarding playlist import, the suggested pathway is:
 
 **Note:** large libraries can take several minutes to populate because SmartTube resolves video metadata before writing the playlists. As a rough example, an import containing around 1,700 unique videos took about five minutes on my setup. During that time it may look like nothing is happening, so give it a few minutes before assuming the import has failed.
 
+**Fresh profiles:** if playlist import does not appear to work on a newly created local profile, first create a small local playlist manually, then retry the Google Takeout import. This may be required to initialise local playlist storage. Be patient - parsing Google takeout ZIP may take 5-10 mins.
+
 ## Repository Notes
 
 This repository is maintained for *private* use but you are WELCOME to use it :)
