@@ -20,6 +20,8 @@ The current test build is SmartTube 32.52. Google Takeout playlist import is now
 - Playlist import (DONE)
 - Local avatars (NOT DONE / very minor issue).
 
+Note: creating profile for first time may result in "token missing" error. Simply wait for error to disappear and retry. 
+
 ## Download
 
 Download the current universal APK from [GitHub Releases](https://github.com/BobbyLLM/SmartTube/releases/download/v32.52-local/SmartTube_Local_32.52_universal.apk).
