@@ -26,10 +26,14 @@ class ChannelGroupServiceImplTest {
 
             ChannelGroupServiceImpl.subscribe(true, "channel_a", null, null)
             ChannelGroupServiceImpl.subscribe(true, "channel_a", null, null)
-            ChannelGroupServiceImpl.subscribe(true, "channel_b", "Channel B", null)
+            ChannelGroupServiceImpl.subscribe(true, "channel_b", "Channel B", "icon-b")
 
             assertTrue(ChannelGroupServiceImpl.isSubscribed("channel_a"))
             assertTrue(ChannelGroupServiceImpl.isSubscribed("channel_b"))
+            val savedChannels = ChannelGroupServiceImpl.getSubscribedChannelGroup().items
+            assertEquals("Channel B", savedChannels.first { it.channelId == "channel_b" }.title)
+            assertEquals("icon-b", savedChannels.first { it.channelId == "channel_b" }.iconUrl)
+            assertTrue(savedChannels.any { it.channelId == "channel_a" })
             assertEquals(listOf("channel_b", "channel_a"),
                 ChannelGroupServiceImpl.getSubscribedChannelIds()?.toList())
             assertEquals(listOf("channel_b", "channel_a"),

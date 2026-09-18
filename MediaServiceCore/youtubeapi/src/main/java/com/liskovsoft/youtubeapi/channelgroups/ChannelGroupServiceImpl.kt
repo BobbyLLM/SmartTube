@@ -6,6 +6,7 @@ import com.liskovsoft.mediaserviceinterfaces.data.ItemGroup
 import com.liskovsoft.mediaserviceinterfaces.data.ItemGroup.Item
 import com.liskovsoft.sharedutils.helpers.Helpers
 import com.liskovsoft.sharedutils.rx.RxHelper
+import com.liskovsoft.googleapi.youtubedata3.YouTubeDataServiceInt
 import com.liskovsoft.youtubeapi.channelgroups.importing.grayjay.GrayJayService
 import com.liskovsoft.youtubeapi.channelgroups.importing.newpipe.NewPipeService
 import com.liskovsoft.youtubeapi.channelgroups.importing.pockettube.PocketTubeService
@@ -211,7 +212,14 @@ internal object ChannelGroupServiceImpl: MediaServicePrefs.ProfileChangeListener
             val realCachedChannel = cachedChannel
             val newChannel = if (channelId == realCachedChannel?.channelId)
                 realCachedChannel
-            else ItemImpl(channelId, title, iconUrl)
+            else if (title == null || iconUrl == null) {
+                val metadata = try {
+                    YouTubeDataServiceInt.getChannelMetadata(channelId)?.firstOrNull()
+                } catch (_: Exception) {
+                    null
+                }
+                ItemImpl(channelId, metadata?.title ?: title, metadata?.cardImageUrl ?: iconUrl)
+            } else ItemImpl(channelId, title, iconUrl)
             group.add(newChannel)
         } else {
             group.remove(channelId)
