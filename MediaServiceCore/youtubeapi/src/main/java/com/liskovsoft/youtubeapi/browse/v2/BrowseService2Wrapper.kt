@@ -10,8 +10,7 @@ import com.liskovsoft.youtubeapi.service.data.YouTubeMediaItem
 
 internal object BrowseService2Wrapper: BrowseService2() {
     override fun getSubscriptions(): MediaGroup? {
-        val channelIds = ChannelGroupServiceImpl.getSubscribedChannelIds() ?: return null
-        return RssService.getFeed(*channelIds, type = MediaGroup.TYPE_SUBSCRIPTIONS)
+        return RssService.getSubscriptionFeed(MediaGroup.TYPE_SUBSCRIPTIONS)
     }
 
     override fun getSubscribedChannels(): MediaGroup? {

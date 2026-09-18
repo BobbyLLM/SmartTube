@@ -622,6 +622,9 @@ public class BrowsePresenter extends BasePresenter<BrowseView> implements Sectio
     }
 
     public void refresh(boolean focusOnContent) {
+        if (isSubscriptionsSection()) {
+            getContentService().forceRefreshSubscriptions();
+        }
         updateCurrentSection();
         if (focusOnContent && getView() != null) {
             getView().focusOnContent();
@@ -777,7 +780,11 @@ public class BrowsePresenter extends BasePresenter<BrowseView> implements Sectio
         // Stay on the same group in case of multiple subscribe calls
         VideoGroup baseGroup = VideoGroup.from(section, column);
         baseGroup.setAction(VideoGroup.ACTION_REPLACE);
-        getView().updateSection(baseGroup);
+        boolean keepCachedSubscriptions = section.getId() == MediaGroup.TYPE_SUBSCRIPTIONS
+                && getContentService().hasCachedSubscriptions();
+        if (!keepCachedSubscriptions) {
+            getView().updateSection(baseGroup);
+        }
 
         if (group == null) {
             // No group. Maybe just clear.

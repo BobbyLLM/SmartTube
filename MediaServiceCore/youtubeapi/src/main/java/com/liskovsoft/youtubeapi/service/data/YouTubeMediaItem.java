@@ -388,6 +388,10 @@ public class YouTubeMediaItem implements MediaItem {
         mIsUpcoming = isUpcoming;
     }
 
+    public void setMovie(boolean isMovie) {
+        mIsMovie = isMovie;
+    }
+
     @Override
     public boolean isShorts() {
         return mIsShorts;

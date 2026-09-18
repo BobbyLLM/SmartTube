@@ -7,6 +7,8 @@ import io.reactivex.Observable;
 import java.util.List;
 
 public interface ContentService {
+    default void forceRefreshSubscriptions() {}
+    default boolean hasCachedSubscriptions() { return false; }
     List<MediaGroup> getSearch(String searchText);
     List<MediaGroup> getSearch(String searchText, int options);
     List<String> getSearchTags(String searchText);

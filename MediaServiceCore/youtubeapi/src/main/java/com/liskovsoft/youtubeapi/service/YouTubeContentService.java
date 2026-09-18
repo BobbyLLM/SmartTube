@@ -117,7 +117,17 @@ class YouTubeContentService implements ContentService {
 
     @Override
     public Observable<MediaGroup> getSubscriptionsObserve() {
-        return RxHelper.fromCallable(this::getSubscriptions);
+        return RssService.getSubscriptionFeedObserve(MediaGroup.TYPE_SUBSCRIPTIONS);
+    }
+
+    @Override
+    public void forceRefreshSubscriptions() {
+        RssService.requestSubscriptionRefresh();
+    }
+
+    @Override
+    public boolean hasCachedSubscriptions() {
+        return RssService.hasCachedSubscriptionFeed();
     }
 
     @Override
