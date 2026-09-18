@@ -10,58 +10,37 @@ import com.liskovsoft.youtubeapi.service.data.YouTubeMediaItem
 
 internal object BrowseService2Wrapper: BrowseService2() {
     override fun getSubscriptions(): MediaGroup? {
-        val subscriptions = super.getSubscriptions()
-
-        if (subscriptions == null || subscriptions.isEmpty) {
-            val channelIds = ChannelGroupServiceImpl.getSubscribedChannelIds()
-
-            return channelIds?.let { RssService.getFeed(*it, type = MediaGroup.TYPE_SUBSCRIPTIONS) }
-        }
-
-        return subscriptions
+        val channelIds = ChannelGroupServiceImpl.getSubscribedChannelIds() ?: return null
+        return RssService.getFeed(*channelIds, type = MediaGroup.TYPE_SUBSCRIPTIONS)
     }
 
     override fun getSubscribedChannels(): MediaGroup? {
-        // Backup channels ones
-        // Add each channel on subscribe
-        return getCachedChannels(super.getSubscribedChannels())
+        return getLocalSubscribedChannels()
     }
 
     override fun getSubscribedChannelsByName(): MediaGroup? {
-        // Backup channels ones
-        // Add each channel on subscribe
-        return getCachedChannels(super.getSubscribedChannelsByName())
+        return getLocalSubscribedChannels()
     }
 
     override fun getSubscribedChannelsByNewContent(): MediaGroup? {
-        // Backup channels ones
-        // Add each channel on subscribe
-        return getCachedChannels(super.getSubscribedChannelsByNewContent())
+        return getLocalSubscribedChannels()
     }
 
-    private fun getCachedChannels(subscribedChannels: MediaGroup?): MediaGroup? {
-        if (subscribedChannels == null || subscribedChannels.isEmpty) {
-            val channelGroup = ChannelGroupServiceImpl.getSubscribedChannelGroup()
+    private fun getLocalSubscribedChannels(): MediaGroup? {
+        val channelGroup = ChannelGroupServiceImpl.getSubscribedChannelGroup()
+        if (channelGroup.isEmpty) return null
 
-            return if (channelGroup.isEmpty) null else channelGroup.let {
-                YouTubeMediaGroup(MediaGroup.TYPE_CHANNEL_UPLOADS).apply {
-                    mediaItems = it.items?.map {
-                        YouTubeMediaItem().apply {
-                            title = it.title
-                            secondTitle = it.subtitle
-                            channelId = it.channelId
-                            cardImageUrl = it.iconUrl
-                            badgeText = it.badge
-                        }
-                    }
+        return YouTubeMediaGroup(MediaGroup.TYPE_CHANNEL_UPLOADS).apply {
+            mediaItems = channelGroup.items?.map {
+                YouTubeMediaItem().apply {
+                    title = it.title
+                    secondTitle = it.subtitle
+                    channelId = it.channelId
+                    cardImageUrl = it.iconUrl
+                    badgeText = it.badge
                 }
             }
         }
-
-        // NOTE: Can't backup. ReloadPageKey cannot be used without an account.
-        // The channels contain reloadPageKey instead of channelId field.
-
-        return subscribedChannels
     }
 
     override fun getMyPlaylists(): MediaGroup? {
